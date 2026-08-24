@@ -78,16 +78,16 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 👉 PASTE YOUR FIREBASE CONFIG OBJECT HERE 👈
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+    apiKey: "AIzaSyBfnLGUjqTAADXw9XX6NDzVk2oCtFhM0k",
+    authDomain: "pickleball-casual-dupr.firebaseapp.com",
+    projectId: "pickleball-casual-dupr",
+    storageBucket: "pickleball-casual-dupr.appspot.com",
+    messagingSenderId: "224893660320",
+    appId: "1:224893660320:web:da7081b62b2b6f4614adc5",
+    measurementId: "G-CPM6BYDBDE",
+    databaseURL: "https://pickleball-casual-dupr-default-rtdb.firebaseio.com/"
+};
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
