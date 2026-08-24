@@ -136,7 +136,7 @@
 
         let playersData = {};
 
-        async function initApp() {
+      async function initApp() {
             const dbRef = ref(db);
             const snapshot = await get(dbRef);
             
@@ -144,11 +144,58 @@
                 await set(ref(db, 'players'), initialPlayers);
                 playersData = initialPlayers;
             } else {
-                playersData = snapshot.val().players;
+                playersData = snapshot.val().players || initialPlayers;
             }
 
             populateDropdowns();
             renderLeaderboard();
+        }
+
+        function populateDropdowns() {
+            const selectIds = ['w1', 'w2', 'l1', 'l2'];
+            const playerNames = Object.keys(playersData);
+            
+            selectIds.forEach((id, index) => {
+                const select = document.getElementById(id);
+                if (!select) return; // Safety check
+                
+                select.innerHTML = '';
+                playerNames.forEach((name, i) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    // Default different selections to avoid duplicate defaults
+                    if (i === index % playerNames.length) option.selected = true;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        window.addNewPlayer = async function() {
+            const nameInput = document.getElementById('newPlayerName');
+            const playerName = nameInput.value.trim();
+
+            if (!playerName) {
+                alert("Please enter a valid name!");
+                return;
+            }
+
+            if (playersData[playerName]) {
+                alert("This player already exists!");
+                return;
+            }
+
+            playersData[playerName] = 1500.0;
+
+            await set(ref(db, 'players'), playersData);
+
+            nameInput.value = '';
+            alert(`${playerName} has been added to the league!`);
+            
+            // Instantly refresh the dropdowns and leaderboard
+            populateDropdowns();
+            renderLeaderboard();
+        }
         }
 
         function populateDropdowns() {
