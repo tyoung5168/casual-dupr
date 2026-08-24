@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bay Area Pickleball League</title>
+    <!-- Tailwind CSS for clean mobile-friendly styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-p-6">
+    <div class="max-w-xl mx-auto p-4">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold">🏓 Bay Area Pickleball League</h1>
+            <p class="text-gray-400 text-sm mt-1">San Jose & Castro Valley Live Rankings</p>
+        </header>
+
+        <!-- Match Logging Form -->
+        <div class="bg-gray-800 p-5 rounded-xl shadow-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-emerald-400">Log a Match</h2>
+            
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Winner 1</label>
+                    <select id="w1" class="w-full bg-gray-700 p-2 rounded text-sm player-select"></select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Winner 2</label>
+                    <select id="w2" class="w-full bg-gray-700 p-2 rounded text-sm player-select"></select>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs text-gray-400 mb-1">Winning Score</label>
+                <input type="number" id="winScore" value="11" class="w-full bg-gray-700 p-2 rounded text-sm">
+            </div>
+
+            <hr class="border-gray-700 my-4">
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Loser 1</label>
+                    <select id="l1" class="w-full bg-gray-700 p-2 rounded text-sm player-select"></select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Loser 2</label>
+                    <select id="l2" class="w-full bg-gray-700 p-2 rounded text-sm player-select"></select>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs text-gray-400 mb-1">Losing Score</label>
+                <input type="number" id="loseScore" value="7" class="w-full bg-gray-700 p-2 rounded text-sm">
+            </div>
+
+            <button onclick="submitMatch()" class="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-2 rounded transition">Submit Match</button>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="bg-gray-800 p-5 rounded-xl shadow-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-emerald-400">🏆 Live Leaderboard</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-700 text-gray-400">
+                            <th class="pb-2">Rank</th>
+                            <th class="pb-2">Player</th>
+                            <th class="pb-2 text-right">Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Modular Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // 👉 PASTE YOUR FIREBASE CONFIG OBJECT HERE 👈
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const initialPlayers = {
+            "Rank 1 (SJ)": 1650.0, "Rank 2 (SJ)": 1630.0, "Rank 3 (SJ)": 1610.0, "Rank 4 (SJ)": 1590.0,
+            "Rank 5 (SJ)": 1570.0, "Rank 6 (SJ)": 1550.0, "Rank 7 (SJ)": 1530.0, "Rank 8 (SJ)": 1510.0,
+            "Rank 9 (CV)": 1490.0, "Rank 10 (CV)": 1470.0, "Rank 11 (CV)": 1460.0, "Rank 12 (CV)": 1450.0,
+            "Rank 13 (CV)": 1440.0, "Rank 14 (CV)": 1430.0, "Rank 15 (CV)": 1415.0, "Rank 16 (CV)": 1400.0
+        };
+
+        let playersData = {};
+
+        async function initApp() {
+            const dbRef = ref(db);
+            const snapshot = await get(dbRef);
+            
+            if (!snapshot.exists() || !snapshot.val().players) {
+                await set(ref(db, 'players'), initialPlayers);
+                playersData = initialPlayers;
+            } else {
+                playersData = snapshot.val().players;
+            }
+
+            populateDropdowns();
+            renderLeaderboard();
+        }
+
+        function populateDropdowns() {
+            const selects = document.querySelectorAll('.player-select');
+            const playerNames = Object.keys(playersData);
+            
+            selects.forEach((select, index) => {
+                select.innerHTML = '';
+                playerNames.forEach((name, i) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    if (i === index) option.selected = true;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '';
+
+            // Sort players by rating descending
+            const sorted = Object.entries(playersData).sort((a, b) => b[1] - a[1]);
+
+            sorted.forEach(([name, rating], index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-700/50";
+                tr.innerHTML = `
+                    <td class="py-3 font-semibold text-gray-400">#${index + 1}</td>
+                    <td class="py-3 font-medium">${name}</td>
+                    <td class="py-3 text-right font-mono text-emerald-400">${rating.toFixed(1)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.submitMatch = async function() {
+            const w1 = document.getElementById('w1').value;
+            const w2 = document.getElementById('w2').value;
+            const l1 = document.getElementById('l1').value;
+            const l2 = document.getElementById('l2').value;
+            const winScore = parseInt(document.getElementById('winScore').value);
+            const loseScore = parseInt(document.getElementById('loseScore').value);
+
+            const selected = new Set([w1, w2, l1, l2]);
+            if (selected.size < 4) {
+                alert("All 4 players must be unique individuals!");
+                return;
+            }
+            if (winScore <= loseScore) {
+                alert("Winning score must be higher than losing score!");
+                return;
+            }
+
+            // Elo + Margin of Victory Calculations
+            const w1_r = playersData[w1], w2_r = playersData[w2];
+            const l1_r = playersData[l1], l2_r = playersData[l2];
+
+            const teamWinRating = (w1_r + w2_r) / 2;
+            const teamLoseRating = (l1_r + l2_r) / 2;
+
+            const expWin = 1 / (1 + Math.pow(10, (teamLoseRating - teamWinRating) / 400));
+            const pointDiff = winScore - loseScore;
+            const movMultiplier = Math.log(Math.max(pointDiff, 1) + 1) * (2.2 / (Math.abs(teamWinRating - teamLoseRating) * 0.001 + 2.2));
+
+            const K = 32;
+            const baseChange = K * (1 - expWin) * movMultiplier;
+
+            playersData[w1] += baseChange / 2;
+            playersData[w2] += baseChange / 2;
+            playersData[l1] -= baseChange / 2;
+            playersData[l2] -= baseChange / 2;
+
+            // Save back to Firebase
+            await set(ref(db, 'players'), playersData);
+            
+            alert("Match recorded successfully!");
+            renderLeaderboard();
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
